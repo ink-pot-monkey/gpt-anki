@@ -2,16 +2,20 @@ from __future__ import annotations
 
 import logging
 import os
+import io
+import sys
+import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 import pandas as pd
-from dotenv import load_dotenv
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from langchain_core.runnables.base import RunnableSerializable
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
+
+from .generate_deck import main as generate_deck_main
 
 # for typing purposes only
 if TYPE_CHECKING:
@@ -22,22 +26,20 @@ ChainType: TypeAlias = RunnableSerializable[dict[Any, Any], Any]
 # defining logging config
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
-# loading api key and defining vars
-load_dotenv()
-
-
-# checking if .env vars are set
 def get_deck_name() -> str:
-    deck_name: str = os.environ.get("DECK_NAME", "default_deck_name")
-    return deck_name
-
+    if len(sys.argv) < 2:
+        raise ValueError("No deck name")
+    return sys.argv[1]
 
 def get_api_key() -> str:
-    openai_api_key: str | None = os.environ.get("OPENAI_API_KEY")
-    if openai_api_key is None:
-        raise ValueError("No API key set")
-    return openai_api_key
+    if len(sys.argv) < 3:
+        raise ValueError("No API key")
+    return sys.argv[2]
 
+def get_input_text() -> str:
+    if len(sys.argv) < 4:
+        raise ValueError("No input text")
+    return sys.argv[3]
 
 # defining path to dirs
 deck_name = get_deck_name()
@@ -45,10 +47,8 @@ data_dir: Path = Path("data")
 csv_file_path: Path = data_dir / f"{deck_name}.csv"
 
 # llm params
-OPENAI_API_KEY = get_api_key()
 MODEL: str = "gpt-4"
 TEMPERATURE: float = 0.0
-
 
 # datatype validation
 class FlashCard(BaseModel):
@@ -67,7 +67,7 @@ def llm_generate_flashcards(input: str, prompt: str) -> DataFrame:
     and saves the output to a CSV file in the data directory
     """
 
-    llm: ChatOpenAI = ChatOpenAI(model=MODEL, temperature=TEMPERATURE)
+    llm: ChatOpenAI = ChatOpenAI(model=MODEL, temperature=TEMPERATURE, openai_api_key=get_api_key())
 
     logging.info("Creating model...")
 
@@ -104,11 +104,14 @@ def write_flashcards_to_csv(dataframe: DataFrame, csv_file_path: Path) -> None:
 
 def main() -> None:
     try:
-        input_text = Path("src/input.txt").read_text()
+        input_text = get_input_text()
         user_prompt = Path("src/prompt.txt").read_text()
 
         df = llm_generate_flashcards(input_text, user_prompt)
-        write_flashcards_to_csv(df, csv_file_path)
+        qa_list = list(df.to_records(index=False))
+        
+        generate_deck_main(get_deck_name(), qa_list)
+
         logging.info("Done \U0001f600")
 
     except Exception:
