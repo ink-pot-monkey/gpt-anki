@@ -1,5 +1,5 @@
 {
-  description = "Application packaged using poetry2nix";
+  description = "gpt-anki a commandline tool to generate anki cards";
 
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
@@ -19,16 +19,16 @@
           mkPoetryApplication;
       in {
         packages = {
-          myapp = mkPoetryApplication {
+          gpt-anki = mkPoetryApplication {
             projectDir = self;
             preferWheels = true;
           };
-          default = self.packages.${system}.myapp;
+          default = self.packages.${system}.gpt-anki;
         };
 
         devShells.default = pkgs.mkShell {
-          inputsFrom = [ self.packages.${system}.myapp ];
-          packages = [ pkgs.poetry pkgs.python3 ];
+          inputsFrom = [ self.packages.${system}.gpt-anki ];
+          packages = [ pkgs.poetry ];
         };
       });
 }
