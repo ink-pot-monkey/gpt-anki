@@ -37,9 +37,17 @@ def get_api_key() -> str:
     return sys.argv[2]
 
 def get_input_text() -> str:
-    if len(sys.argv) < 4:
+    try:
+        input_text = sys.argv[3]
+
+        if os.path.isfile(input_text):
+            with open(input_text, 'r') as file:
+                return file.read()
+
+        return input_text
+        
+    except IndexError:
         raise ValueError("No input text")
-    return sys.argv[3]
 
 # defining path to dirs
 deck_name = get_deck_name()
