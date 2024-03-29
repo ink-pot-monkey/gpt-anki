@@ -56,7 +56,6 @@ follow_imports = "normal"
 
 [tool.poetry.scripts]
 generate-flashcards = 'src.generate_flashcards:main'
-generate-deck = 'src.generate_deck:main'
 
 [build-system]
 requires = ["poetry-core"]
