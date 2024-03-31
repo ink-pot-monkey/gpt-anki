@@ -113,7 +113,8 @@ def write_flashcards_to_csv(dataframe: DataFrame, csv_file_path: Path) -> None:
 def main() -> None:
     try:
         input_text = get_input_text()
-        user_prompt = Path("src/prompt.txt").read_text()
+
+        user_prompt = (Path(__file__).resolve().parent / 'prompt.txt').read_text()
 
         df = llm_generate_flashcards(input_text, user_prompt)
         qa_list = list(df.to_records(index=False))
